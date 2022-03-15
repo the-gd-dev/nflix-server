@@ -3,85 +3,76 @@ const User = require("../../../models/User");
 const bcrypt = require("bcrypt");
 
 exports.postRegister = async (req, res) => {
-  // Our register logic starts here
   try {
-    // Get user input
-    const { first_name, last_name, email, password } = req.body;
-
-    // Validate user input
-    if (!(email && password && first_name && last_name)) {
-      res.status(400).send("All input is required");
-    }
-
+    //validations
+    const { name, phoneNumber, email, password } = req.body;
+    if (!(name && email && phoneNumber && password))
+      return res.status(400).send({ status: 400, message: "Data is missing." });
     // check if user already exist
-    // Validate if user exist in our database
     const oldUser = await User.findOne({ email });
-
     if (oldUser) {
-      return res.status(409).send("User Already Exist. Please Login");
+      return res
+        .status(409)
+        .send({ status: 400, message: "User Already Exist. Please Login" });
     }
-
     //Encrypt user password
-    encryptedPassword = await bcrypt.hash(password, 10);
+    let encryptedPassword = await bcrypt.hash(password, 16);
 
     // Create user in our database
     const user = await User.create({
-      name: first_name + " " + last_name,
-      email: email.toLowerCase(),
+      name,
+      phoneNumber,
+      email,
       password: encryptedPassword,
     });
-
-    // Create token
-    const token = jwt.sign(
-      { user_id: user._id, email },
-      process.env.TOKEN_KEY,
-      {
-        expiresIn: "2h",
-      }
-    );
-    // save user token
-    user.token = token;
-
-    // return new user
-    res.status(201).json(user);
+    let resUser = {
+      user_id: user._id,
+      name,
+      email,
+    };
+    // Jwt
+    const token = jwt.sign(resUser, process.env.TOKEN_KEY, {
+      expiresIn: "2h",
+    });
+    return res.status(201).json({ message: "Signed up.", user: resUser, token });
   } catch (err) {
-    console.log(err);
+    return res.status(500).json(err);
   }
-  // Our register logic ends here
 };
 
 exports.postLogin = async (req, res) => {
-  // Our login logic starts here
   try {
-    // Get user input
-    const { email, password } = req.body;
-
-    // Validate user input
-    if (!(email && password)) {
-      res.status(400).send("All input is required");
-    }
-    // Validate if user exist in our database
-    const user = await User.findOne({ email });
-
+    //validations
+    const { username, password } = req.body;
+    if (!(username && password))
+      return res
+        .status(400)
+        .send({ status: 400, message: "Credentials required." });
+    const user = await User.findOne({ email: username });
+    //credentials matched
     if (user && (await bcrypt.compare(password, user.password))) {
-      // Create token
-      const token = jwt.sign(
-        { user_id: user._id, email },
-        process.env.TOKEN_KEY,
-        {
-          expiresIn: "2h",
-        }
-      );
-
-      // save user token
-      user.token = token;
-
-      // user
-      return res.status(200).json(user);
+      //Jwt Token Generation
+      let resUser = {
+        user_id: user._id,
+        name: user.name,
+        email: user.email,
+      };
+      const token = jwt.sign(resUser, process.env.TOKEN_KEY, {
+        expiresIn: "2h",
+      });
+      return res
+        .status(200)
+        .json({ message: "Logged in.", user: resUser, token });
     }
-    res.status(400).send("Invalid Credentials");
+    //credentials not matched
+    return res
+      .status(400)
+      .send({ status: 400, message: "Invalid Credentials" });
   } catch (err) {
     console.log(err);
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: err });
   }
   // Our register logic ends here
 };
