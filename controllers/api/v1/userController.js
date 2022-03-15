@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../../../models/User");
 const bcrypt = require("bcrypt");
+const Profile = require("../../../models/Profile");
 
 exports.postRegister = async (req, res) => {
   try {
@@ -15,6 +16,9 @@ exports.postRegister = async (req, res) => {
         .status(409)
         .send({ status: 400, message: "User Already Exist. Please Login" });
     }
+    const defaultProfile = await Profile.create({
+      name: name,
+    });
     //Encrypt user password
     let encryptedPassword = await bcrypt.hash(password, 16);
 
@@ -24,7 +28,9 @@ exports.postRegister = async (req, res) => {
       phoneNumber,
       email,
       password: encryptedPassword,
+      profiles: [defaultProfile],
     });
+
     let resUser = {
       user_id: user._id,
       name,
@@ -34,7 +40,9 @@ exports.postRegister = async (req, res) => {
     const token = jwt.sign(resUser, process.env.TOKEN_KEY, {
       expiresIn: "2h",
     });
-    return res.status(201).json({ message: "Signed up.", user: resUser, token });
+    return res
+      .status(201)
+      .json({ message: "Signed up.", user: resUser, token });
   } catch (err) {
     return res.status(500).json(err);
   }
