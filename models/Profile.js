@@ -9,6 +9,10 @@ const profileSchema = new Schema(
     isContentType: {
       type: String,
     },
+    avatar: {
+      type: Number,
+      default: "1",
+    },
     isChildren: {
       type: Boolean,
       default: false,

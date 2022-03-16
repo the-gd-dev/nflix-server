@@ -7,7 +7,7 @@ const userSchema = new Schema(
     phoneNumber: { type: Number, required: true },
     password: { type: String, required: true },
     token: { type: String },
-    profiles: [Schema.Types.ObjectId],
+    profiles: [{ type: Schema.Types.ObjectId, ref: "Profile" }],
   },
   { timestamps: true }
 );

@@ -2,7 +2,12 @@ const jwt = require("jsonwebtoken");
 const User = require("../../../models/User");
 const bcrypt = require("bcrypt");
 const Profile = require("../../../models/Profile");
-
+/**
+ * Create New User
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
 exports.postRegister = async (req, res) => {
   try {
     //validations
@@ -48,6 +53,12 @@ exports.postRegister = async (req, res) => {
   }
 };
 
+/**
+ * Login User
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
 exports.postLogin = async (req, res) => {
   try {
     //validations
@@ -83,4 +94,14 @@ exports.postLogin = async (req, res) => {
       .json({ message: "Internal Server Error", error: err });
   }
   // Our register logic ends here
+};
+
+/**
+ * get JWT user
+ * @param {*} req
+ * @param {*} res
+ */
+exports.getUser = async (req, res) => {
+  let user = await User.findOne({ _id: req.user.user_id }).select('_id name email phoneNumber');
+  return res.status(200).json({ message: "User Fetched.", user: user });
 };
