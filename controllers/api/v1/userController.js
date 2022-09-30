@@ -15,7 +15,7 @@ exports.postRegister = async (req, res) => {
     if (!(name && email && phoneNumber && password))
       return res.status(400).send({ status: 400, message: "Data is missing." });
     // check if user already exist
-    const oldUser = await User.findOne({ email });
+    const oldUser = await User.findOne({ email, phoneNumber });
     if (oldUser) {
       return res
         .status(409)
@@ -49,7 +49,7 @@ exports.postRegister = async (req, res) => {
       .status(201)
       .json({ message: "Signed up.", user: resUser, token });
   } catch (err) {
-    return res.status(500).json(err);
+    return res.status(500).json({err});
   }
 };
 
@@ -86,9 +86,9 @@ exports.postLogin = async (req, res) => {
     //credentials not matched
     return res
       .status(400)
-      .send({ status: 400, message: "Invalid Credentials" });
+      .send({ status: 400, message: "Invalid Credentials." });
   } catch (err) {
-    console.log(err);
+    console.log(err)
     return res
       .status(500)
       .json({ message: "Internal Server Error", error: err });

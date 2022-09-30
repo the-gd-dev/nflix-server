@@ -32,8 +32,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use("/static", express.static(path.join(__dirname, "public")));
 app.use("/api/v1/users", userServices);
 app.use("/api/v1/profiles", profileServices);
-
 mongoose.connect(process.env.MONGO_URL).then((res) => {
-  server.listen(process.env.PORT);
+  server.listen(process.env.PORT || 8080);
   console.log("Netflix Server Running at http://localhost:8080");
 });
