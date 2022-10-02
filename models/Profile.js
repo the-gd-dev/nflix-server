@@ -10,7 +10,7 @@ const profileSchema = new Schema(
       type: String,
     },
     avatar: {
-      type: Number,
+      type: String,
       default: "1",
     },
     isChildren: {

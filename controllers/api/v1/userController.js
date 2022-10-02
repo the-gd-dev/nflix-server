@@ -32,6 +32,7 @@ exports.postRegister = async (req, res) => {
       name,
       phoneNumber,
       email,
+      current_watching : defaultProfile,  
       password: encryptedPassword,
       profiles: [defaultProfile],
     });
@@ -49,7 +50,7 @@ exports.postRegister = async (req, res) => {
       .status(201)
       .json({ message: "Signed up.", user: resUser, token });
   } catch (err) {
-    return res.status(500).json({err});
+    return res.status(500).json({ err });
   }
 };
 
@@ -77,7 +78,7 @@ exports.postLogin = async (req, res) => {
         email: user.email,
       };
       const token = jwt.sign(resUser, process.env.TOKEN_KEY, {
-        expiresIn: "2h",
+        expiresIn: "24h",
       });
       return res
         .status(200)
@@ -88,7 +89,7 @@ exports.postLogin = async (req, res) => {
       .status(400)
       .send({ status: 400, message: "Invalid Credentials." });
   } catch (err) {
-    console.log(err)
+    console.log(err);
     return res
       .status(500)
       .json({ message: "Internal Server Error", error: err });
@@ -97,11 +98,37 @@ exports.postLogin = async (req, res) => {
 };
 
 /**
+
+ * update user data
+ * @param {*} req
+ * @param {*} res
+ */
+exports.updateUserData = async (req, res) => {
+  let user = await User.findOne({ _id: req.user.user_id });
+  if (!user) {
+    return res.status(404).send({ status: 400, message: "User Not Found." });
+  }
+  try {
+    await User.updateOne({ _id: req.user.user_id }, req.body);
+    let updatedUser = await User.findOne({ _id: req.user.user_id })
+      .populate("current_watching")
+      .select("_id name email phoneNumber");
+    return res
+      .status(200)
+      .json({ message: "User Updated.", user: updatedUser });
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: err });
+  }
+};
+
+/**
  * get JWT user
  * @param {*} req
  * @param {*} res
  */
 exports.getUser = async (req, res) => {
-  let user = await User.findOne({ _id: req.user.user_id }).select('_id name email phoneNumber');
+  let user = await User.findOne({ _id: req.user.user_id }).populate("current_watching").select("_id name email phoneNumber");
   return res.status(200).json({ message: "User Fetched.", user: user });
 };

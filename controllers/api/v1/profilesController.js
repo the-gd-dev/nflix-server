@@ -64,26 +64,23 @@ exports.addNewProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const profileId = req.params.profileId;
-    const { name } = req.body;
-    let isProfileExist = await Profile.findOne({ name: name });
-    let profile_data = isProfileExist;
-    if (!isProfileExist) {
+    const { name, avatar } = req.body;
+    let isProfileExist = await Profile.findOne({ _id: profileId });
+    if (isProfileExist) {
       profile_data = await Profile.findOne({ _id: profileId }).updateOne({
         name,
+        avatar,
       });
     } else {
-      return res.status(409).send({
-        status: 409,
-        profile: profile_data,
-        message: "Profile Already Exist.",
+      return res.status(404).send({
+        status: 404,
+        message: "Profile Not Found.",
       });
     }
+    const newProfileData = await Profile.findOne({ _id: profileId });
     return res.status(200).send({
       status: 200,
-      profile: {
-        _id: profileId,
-        name,
-      },
+      profile: newProfileData,
       message: "Updated Profile.",
     });
   } catch (error) {
@@ -98,4 +95,28 @@ exports.updateProfile = async (req, res) => {
  * @param {*} req
  * @param {*} res
  */
-exports.trashProfile = (req, res) => {};
+exports.trashProfile = async (req, res) => {
+  try {
+    let user = await User.findOne({ _id: req.user.user_id }).populate('profiles');
+    const profileId = req.params.profileId;
+    let isProfileExist = await Profile.findOne({ _id: profileId });
+    if (!isProfileExist) {
+      return res.status(404).send({
+        status: 404,
+        message: "Profile Not Found.",
+      });
+    }
+    const updatedProfiles = user.profiles.filter(profile => profile._id !== profileId);
+    await User.findOne({ _id: req.user.user_id }).updateOne({profiles : updatedProfiles});
+    const profileDeleted = await Profile.deleteOne({ _id: profileId });
+    return res.status(200).send({
+      status: 200,
+      profile: profileDeleted,
+      message: "Deleted Profile.",
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .send({ status: 500, message: "Internal Server Error.", error });
+  }
+};
