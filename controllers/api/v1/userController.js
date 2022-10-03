@@ -2,6 +2,11 @@ const jwt = require("jsonwebtoken");
 const User = require("../../../models/User");
 const bcrypt = require("bcrypt");
 const Profile = require("../../../models/Profile");
+async function getUserFromCollection(usrId) {
+  return await User.findOne({ _id: usrId })
+    .populate("profiles")
+    .select("_id name email phoneNumber");
+}
 /**
  * Create New User
  * @param {*} req
@@ -32,16 +37,12 @@ exports.postRegister = async (req, res) => {
       name,
       phoneNumber,
       email,
-      current_watching : defaultProfile,  
+      current_watching: defaultProfile,
       password: encryptedPassword,
       profiles: [defaultProfile],
     });
 
-    let resUser = {
-      user_id: user._id,
-      name,
-      email,
-    };
+    let resUser = await getUserFromCollection(user._id);
     // Jwt
     const token = jwt.sign(resUser, process.env.TOKEN_KEY, {
       expiresIn: "2h",
@@ -77,19 +78,19 @@ exports.postLogin = async (req, res) => {
         name: user.name,
         email: user.email,
       };
+      const responseUserData = await getUserFromCollection(user._id);
       const token = jwt.sign(resUser, process.env.TOKEN_KEY, {
         expiresIn: "24h",
       });
       return res
         .status(200)
-        .json({ message: "Logged in.", user: resUser, token });
+        .json({ message: "Logged in.", user: responseUserData, token });
     }
     //credentials not matched
     return res
       .status(400)
       .send({ status: 400, message: "Invalid Credentials." });
   } catch (err) {
-    console.log(err);
     return res
       .status(500)
       .json({ message: "Internal Server Error", error: err });
@@ -111,7 +112,7 @@ exports.updateUserData = async (req, res) => {
   try {
     await User.updateOne({ _id: req.user.user_id }, req.body);
     let updatedUser = await User.findOne({ _id: req.user.user_id })
-      .populate("current_watching")
+      .populate("profiles")
       .select("_id name email phoneNumber");
     return res
       .status(200)
@@ -129,6 +130,6 @@ exports.updateUserData = async (req, res) => {
  * @param {*} res
  */
 exports.getUser = async (req, res) => {
-  let user = await User.findOne({ _id: req.user.user_id }).populate("current_watching").select("_id name email phoneNumber");
+  let user = await getUserFromCollection(req.user.user_id);
   return res.status(200).json({ message: "User Fetched.", user: user });
 };

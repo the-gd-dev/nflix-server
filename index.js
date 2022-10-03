@@ -34,5 +34,5 @@ app.use("/api/v1/users", userServices);
 app.use("/api/v1/profiles", profileServices);
 mongoose.connect(process.env.MONGO_URL).then((res) => {
   server.listen(process.env.PORT || 8080);
-  console.log("Netflix Server Running at http://localhost:8080");
+  console.log("Netflix-Clone Server http://localhost:8080/");
 });
